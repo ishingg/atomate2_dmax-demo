@@ -14,8 +14,8 @@ class ForceFieldMaker(Maker):
 
     Attributes
     ----------
-    pdb_file : Path
-        Path to the PDB file from structure generation.
+    amor : PSPBuilder instance
+        PSPBuilder instance needed for forcefield parametrization.
     method : str
         'ligpargen' or 'foyer'.
     forcefield_name : str | None

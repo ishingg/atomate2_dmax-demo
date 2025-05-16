@@ -4,6 +4,7 @@ Job maker for polymer structure generation using PSP AmorphousBuilder.
 from dataclasses import dataclass, field
 from pathlib import Path
 from jobflow import Maker, job
+import os
 
 from atomate2.dmax.generators.polymer_structure import build_amorphous_structure
 
@@ -53,6 +54,12 @@ class PSPStructureMaker(Maker):
         Build the amorphous structure and return the PSPBuilder instance (`amor`).
         This builder is used for forcefield parametrization downstream.
         """
+        # determine absolute output directory: if user-specified out_dir is not default '.', use it; else use cwd
+        default_dir = Path('.')
+        if self.out_dir is None or Path(self.out_dir) == default_dir:
+            outdir = os.getcwd()
+        else:
+            outdir = str(Path(self.out_dir).absolute())
         amor = build_amorphous_structure(
             smiles=self.smiles,
             left_cap=self.left_cap,
@@ -61,7 +68,7 @@ class PSPStructureMaker(Maker):
             num_molecules=self.num_molecules,
             density=self.density,
             box_type=self.box_type,
-            out_dir=str(self.out_dir),
+            out_dir=outdir,
             num_conf=self.num_conf,
             loop=self.loop,
         )

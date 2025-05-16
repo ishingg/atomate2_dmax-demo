@@ -14,57 +14,89 @@ except ImportError:
 
 def parametrize_ligpargen(amor, output_fname: str | None = None) -> str:
     """
-    Use PSP AmorphousBuilder `amor` to generate an OPLS-AA LAMMPS file via its get_opls method.
+    Use PSP AmorphousBuilder `amor` or wrapper to generate an OPLS-AA LAMMPS file via get_opls.
 
     Returns path to generated .lmps file.
     """
-    outdir = getattr(amor, 'OutDir', None)
-    if outdir is None:
+    cwd = os.getcwd()
+    # unwrap wrapper if present
+    if hasattr(amor, 'get_builder'):
+        wrapper = amor
+        # re-create builder; packmol.pdb already present in outdir/packmol
+        builder = wrapper.get_builder()
+        outdir = wrapper.out_dir
+    else:
+        builder = amor
+        outdir = getattr(builder, 'OutDir', None)
+    if not outdir:
         raise ValueError('PSP builder instance missing OutDir attribute')
-    # default output filename
     if output_fname is None:
-        output_fname = os.path.join(outdir, 'amor_opls.lmps')
-    # invoke PSP's OPLS method
-    amor.get_opls(output_fname=output_fname)
+        output_fname = os.path.join(cwd, 'amor_opls.lmps')
+    # call PSP get_opls on real builder, ensuring CWD is the builder's output dir
+    cwd = os.getcwd()
+    try:
+        os.chdir(outdir)
+        builder.get_opls(output_fname=output_fname)
+    finally:
+        os.chdir(cwd)
     return output_fname
 
 
 def parametrize_foyer(amor, forcefield_name: str = "oplsaa", output_fname: str | None = None) -> str:
     """
-    Use PSP AmorphousBuilder `amor` to generate a LAMMPS data file via Foyer.
+    Use PSP AmorphousBuilder `amor` or wrapper to generate a LAMMPS data file via Foyer.
     Expects packmol.pdb in `amor.OutDir/packmol`.
 
     Returns path to generated .lammps file.
     """
-    from mbuild import load as mb_load
-    from forcefield_utilities import FoyerFFs
-    from gmso.external.convert_mbuild import from_mbuild
-    from gmso.parameterization import apply
-    from gmso.formats.lammpsdata import write_lammpsdata
+    # dynamic imports for Foyer/GMSO using importlib
+    import importlib
+    try:
+        mb_module = importlib.import_module('mbuild')
+        mb_load = getattr(mb_module, 'load')
+        ffutils_mod = importlib.import_module('forcefield_utilities')
+        FoyerFFs = getattr(ffutils_mod, 'FoyerFFs')
+        conv_mod = importlib.import_module('gmso.external.convert_mbuild')
+        from_mbuild = getattr(conv_mod, 'from_mbuild')
+        param_mod = importlib.import_module('gmso.parameterization')
+        apply = getattr(param_mod, 'apply')
+        write_mod = importlib.import_module('gmso.formats.lammpsdata')
+        write_lammpsdata = getattr(write_mod, 'write_lammpsdata')
+    except ImportError as e:
+        raise ImportError(
+            "Install mbuild, forcefield_utilities, and gmso to enable Foyer parametrization."
+        ) from e
 
-    outdir = getattr(amor, 'OutDir', None)
-    if outdir is None:
+    # unwrap wrapper if present
+    if hasattr(amor, 'get_builder'):
+        wrapper = amor
+        builder = wrapper.get_builder()
+        outdir = wrapper.out_dir
+    else:
+        builder = amor
+        outdir = getattr(builder, 'OutDir', None)
+    if not outdir:
         raise ValueError('PSP builder instance missing OutDir for Foyer parametrization')
-    # packmol subdirectory contains packmol.pdb
+    # locate packmol output
     packdir = os.path.join(outdir, 'packmol')
-    pdb = os.path.join(packdir, 'packmol.pdb')
-    if not os.path.exists(pdb):
-        # fallback: search OutDir for any .pdb
+    pdb_file = os.path.join(packdir, 'packmol.pdb')
+    if not os.path.exists(pdb_file):
+        # fallback: search outdir for any .pdb
         files = [f for f in os.listdir(outdir) if f.endswith('.pdb')]
         if files:
-            pdb = os.path.join(outdir, files[0])
+            pdb_file = os.path.join(outdir, files[0])
         else:
             raise FileNotFoundError(f'packmol.pdb not found in {packdir} or {outdir}')
-    # load with mbuild
-    structure_mb = mb_load(pdb)
-    # convert to GMSO topology & apply forcefield
-    top = from_mbuild(structure_mb)
+    # load structure with mbuild and convert to GMSO topology
+    structure_mb = mb_load(pdb_file)
+    gmso_top = from_mbuild(structure_mb)
+    # apply foyer forcefield
     ff = FoyerFFs.get_ff(forcefield_name).to_gmso_ff()
-    apply(top=top, forcefields=ff, identify_connections=False)
-    # write out
+    apply(top=gmso_top, forcefields=ff, identify_connections=False)
+    # write output file
     if output_fname is None:
         output_fname = os.path.join(outdir, f'amor_{forcefield_name}.lammps')
-    write_lammpsdata(top, filename=output_fname, atom_style='full')
+    write_lammpsdata(gmso_top, filename=output_fname, atom_style='full')
     return output_fname
 
 

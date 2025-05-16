@@ -5,6 +5,68 @@ import os
 import pandas as pd
 from psp.AmorphousBuilder import Builder as PSPBuilder
 
+class PSPBuilderWrapper:
+    """
+    Serializable wrapper for PSP AmorphousBuilder for jobflow.
+    Stores minimal info to reconstruct builder and generate forcefields.
+    """
+    def __init__(
+        self,
+        out_dir: str,
+        smiles: str,
+        left_cap: str,
+        right_cap: str,
+        length: int,
+        num_molecules: int,
+        density: float,
+        box_type: str,
+        num_conf: int = 0,
+        loop: bool = False,
+    ):
+        self.out_dir = out_dir
+        self.smiles = smiles
+        self.left_cap = left_cap
+        self.right_cap = right_cap
+        self.length = length
+        self.num_molecules = num_molecules
+        self.density = density
+        self.box_type = box_type
+        self.num_conf = num_conf
+        self.loop = loop
+
+    def get_builder(self):
+        df = pd.DataFrame([
+            [
+                "polymer",
+                self.smiles,
+                self.left_cap,
+                self.right_cap,
+                self.length,
+                self.num_molecules,
+                self.num_conf,
+                self.loop,
+            ]
+        ], columns=["ID","smiles","LeftCap","RightCap","Len","Num","NumConf","Loop"])
+        builder = PSPBuilder(df, density=self.density, box_type=self.box_type, OutDir=self.out_dir)
+        return builder
+
+    def as_dict(self):
+        return {
+            "out_dir": self.out_dir,
+            "smiles": self.smiles,
+            "left_cap": self.left_cap,
+            "right_cap": self.right_cap,
+            "length": self.length,
+            "num_molecules": self.num_molecules,
+            "density": self.density,
+            "box_type": self.box_type,
+            "num_conf": self.num_conf,
+            "loop": self.loop,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
 
 def build_amorphous_structure(
     smiles: str,
@@ -17,7 +79,7 @@ def build_amorphous_structure(
     out_dir: str,
     num_conf: int = 1,
     loop: bool = False,
-) -> PSPBuilder:
+) -> PSPBuilderWrapper:
     """
     Generate an amorphous polymer structure using PSP AmorphousBuilder.
 
@@ -46,7 +108,7 @@ def build_amorphous_structure(
 
     Returns
     -------
-    PSPBuilder instance.
+    PSPBuilderWrapper instance.
     """
     # prepare input DataFrame
     input_data = [
@@ -77,12 +139,19 @@ def build_amorphous_structure(
     os.makedirs(out_dir, exist_ok=True)
 
     # run PSP builder
-    builder = PSPBuilder(
-        df,
+    builder = PSPBuilder(df, density=density, box_type=box_type, OutDir=out_dir)
+    builder.Build()
+    # wrap builder for serialization
+    wrapper = PSPBuilderWrapper(
+        out_dir=out_dir,
+        smiles=smiles,
+        left_cap=left_cap,
+        right_cap=right_cap,
+        length=length,
+        num_molecules=num_molecules,
         density=density,
         box_type=box_type,
-        OutDir=out_dir,
+        num_conf=num_conf,
+        loop=loop,
     )
-    builder.Build()
-    # return the builder instance for downstream methods
-    return builder
+    return wrapper

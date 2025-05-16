@@ -3,7 +3,6 @@ Forcefield parametrization for a polymer Structure using LigParGen or Foyer.
 """
 from pathlib import Path
 from pymatgen.core.structure import Structure
-from atomate2.lammps.files import write_lammps_data
 import os
 
 

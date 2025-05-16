@@ -15,7 +15,7 @@ def build_amorphous_structure(
     density: float,
     box_type: str,
     out_dir: str,
-    num_conf: int = 0,
+    num_conf: int = 1,
     loop: bool = False,
 ) -> PSPBuilder:
     """

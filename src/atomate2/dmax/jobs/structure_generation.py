@@ -44,7 +44,7 @@ class PSPStructureMaker(Maker):
     density: float = 0.1
     box_type: str = "c"
     out_dir: Path = field(default_factory=Path)
-    num_conf: int = 0
+    num_conf: int = 1
     loop: bool = False
 
     @job

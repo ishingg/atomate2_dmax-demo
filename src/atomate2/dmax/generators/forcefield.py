@@ -33,7 +33,7 @@ def parametrize_ligpargen(amor, output_fname: str | None = None) -> str:
 def parametrize_foyer(amor, forcefield_name: str = "oplsaa", output_fname: str | None = None) -> str:
     """
     Use PSP AmorphousBuilder `amor` to generate a LAMMPS data file via Foyer.
-    Expects packmol.pdb in `amor.OutDir`.
+    Expects packmol.pdb in `amor.OutDir/packmol`.
 
     Returns path to generated .lammps file.
     """
@@ -46,7 +46,16 @@ def parametrize_foyer(amor, forcefield_name: str = "oplsaa", output_fname: str |
     outdir = getattr(amor, 'OutDir', None)
     if outdir is None:
         raise ValueError('PSP builder instance missing OutDir for Foyer parametrization')
-    pdb = os.path.join(outdir, 'packmol.pdb')
+    # packmol subdirectory contains packmol.pdb
+    packdir = os.path.join(outdir, 'packmol')
+    pdb = os.path.join(packdir, 'packmol.pdb')
+    if not os.path.exists(pdb):
+        # fallback: search OutDir for any .pdb
+        files = [f for f in os.listdir(outdir) if f.endswith('.pdb')]
+        if files:
+            pdb = os.path.join(outdir, files[0])
+        else:
+            raise FileNotFoundError(f'packmol.pdb not found in {packdir} or {outdir}')
     # load with mbuild
     structure_mb = mb_load(pdb)
     # convert to GMSO topology & apply forcefield

@@ -48,11 +48,12 @@ class PSPStructureMaker(Maker):
     loop: bool = False
 
     @job
-    def make(self) -> str:
+    def make(self) -> object:
         """
-        Build the amorphous structure and return the PDB filepath.
+        Build the amorphous structure and return the PSPBuilder instance (`amor`).
+        This builder is used for forcefield parametrization downstream.
         """
-        pdb_path = build_amorphous_structure(
+        amor = build_amorphous_structure(
             smiles=self.smiles,
             left_cap=self.left_cap,
             right_cap=self.right_cap,
@@ -64,4 +65,4 @@ class PSPStructureMaker(Maker):
             num_conf=self.num_conf,
             loop=self.loop,
         )
-        return pdb_path
+        return amor

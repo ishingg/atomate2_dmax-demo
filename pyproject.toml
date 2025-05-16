@@ -148,6 +148,11 @@ atomate2 = ["py.typed"]
 "atomate2.vasp.sets" = ["*.yaml"]
 "atomate2.cp2k.sets" = ["*.yaml"]
 "atomate2.cp2k.schemas.calc_types" = ["*.yaml"]
+"atomate2.dmax.templates.lammps" = [
+    "in.master_structure_equilibration",
+    "in.master_error_analysis",
+    "in.master_dynamic_mechanical_analysis"
+]
 
 [tool.versioningit.vcs]
 method = "git"

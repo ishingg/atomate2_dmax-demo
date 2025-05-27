@@ -33,8 +33,13 @@ class PSPBuilderWrapper:
         self.box_type = box_type
         self.num_conf = num_conf
         self.loop = loop
+        self._builder = None  # will hold the built PSPBuilder
 
     def get_builder(self):
+        # if original builder stored, return it
+        if hasattr(self, '_builder') and self._builder is not None:
+            return self._builder
+        # else reconstruct from stored parameters
         df = pd.DataFrame([
             [
                 "polymer",
@@ -141,7 +146,7 @@ def build_amorphous_structure(
     # run PSP builder
     builder = PSPBuilder(df, density=density, box_type=box_type, OutDir=out_dir)
     builder.Build()
-    # wrap builder for serialization
+    # wrap builder for reuse
     wrapper = PSPBuilderWrapper(
         out_dir=out_dir,
         smiles=smiles,
@@ -154,4 +159,5 @@ def build_amorphous_structure(
         num_conf=num_conf,
         loop=loop,
     )
+    wrapper._builder = builder
     return wrapper

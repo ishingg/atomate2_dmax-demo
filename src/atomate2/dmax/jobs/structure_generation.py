@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from jobflow import Maker, job
 import os
-
 from atomate2.dmax.generators.polymer_structure import build_amorphous_structure
 
 @dataclass
@@ -35,6 +34,8 @@ class PSPStructureMaker(Maker):
         Number of conformers to generate.
     loop : bool = False
         Whether to loop until target density is reached.
+    return_builder : bool = False
+        Whether to return the builder wrapper or the packmol pdb path.
     """
     name: str = "psp_structure_generation"
     smiles: str = field(default="[*]")
@@ -47,19 +48,16 @@ class PSPStructureMaker(Maker):
     out_dir: Path = field(default_factory=Path)
     num_conf: int = 1
     loop: bool = False
+    return_builder: bool = False
 
     @job
     def make(self) -> object:
         """
-        Build the amorphous structure and return the PSPBuilder instance (`amor`).
-        This builder is used for forcefield parametrization downstream.
+        Build the amorphous structure and return either the wrapper (if return_builder)
+        or the path to the packmol pdb file.
         """
-        # determine absolute output directory: if user-specified out_dir is not default '.', use it; else use cwd
-        default_dir = Path('.')
-        if self.out_dir is None or Path(self.out_dir) == default_dir:
-            outdir = os.getcwd()
-        else:
-            outdir = str(Path(self.out_dir).absolute())
+        # write all structure outputs into the job's own working directory
+        outdir = os.getcwd()
         amor = build_amorphous_structure(
             smiles=self.smiles,
             left_cap=self.left_cap,
@@ -72,4 +70,8 @@ class PSPStructureMaker(Maker):
             num_conf=self.num_conf,
             loop=self.loop,
         )
-        return amor
+        if self.return_builder:
+            return amor
+        # default: return the generated packmol pdb path
+        pdb_path = os.path.join(outdir, "packmol", "packmol.pdb")
+        return pdb_path

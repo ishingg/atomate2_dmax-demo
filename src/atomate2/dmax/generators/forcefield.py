@@ -17,15 +17,9 @@ def parametrize_ligpargen(amor, output_fname: str | None = None) -> str:
     Generate an OPLS-AA LAMMPS file via PSP's get_opls.
     Returns the full path to the generated .lmp file.
     """
-    # unwrap wrapper if present
+    # unwrap wrapper if present without rebuilding
     if hasattr(amor, 'get_builder'):
-        # reconstruct the PSPBuilder and ensure its cell is built
         builder = amor.get_builder()
-        # build cell dimensions (if not already present)
-        try:
-            builder.Build()
-        except Exception:
-            pass  # ignore if already built
         outdir = amor.out_dir
     else:
         builder = amor

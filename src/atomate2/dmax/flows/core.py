@@ -8,11 +8,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+import os
 
-from jobflow import Flow, Maker
+from jobflow import Flow, Maker  # ensure Flow is imported
 
 from atomate2.dmax.jobs.structure_generation import PSPStructureMaker
 from atomate2.dmax.jobs.forcefield_param import ForceFieldMaker
+from atomate2.dmax.schemas.task import DmaxDataGenerationFlowDocument
 
 
 @dataclass
@@ -48,11 +50,13 @@ class BaseDataGenerationFlow(Maker):
         ).make()
         # forcefield
         ff_job = ForceFieldMaker(out_dir=wd).make(struct_job.output)
-        # collect outputs
-        result = {
-            "pdb_molecule": f"{wd}/molecules/polymer.pdb" if wd else None,
-            "pdb_amorphous": f"{wd}/packmol/packmol.pdb" if wd else None,
-            "lammps_data": ff_job.output,
-        }
+        # assemble final document using task documents from each job
+        struct_doc = struct_job.output  # DmaxStructureTaskDocument
+        ff_doc = ff_job.output  # DmaxForceFieldTaskDocument
+        doc = DmaxDataGenerationFlowDocument(
+            packmol_pdb=struct_doc.packmol_pdb,
+            polymer_pdb=struct_doc.polymer_pdb,
+            lammps_data=ff_doc.lammps_data,
+        )
         # return a Flow chaining the structure and forcefield jobs
-        return Flow([struct_job, ff_job], result, name=self.name)
+        return Flow([struct_job, ff_job], doc, name=self.name)

@@ -4,8 +4,9 @@ Job maker for polymer structure generation using PSP AmorphousBuilder.
 from dataclasses import dataclass, field
 from pathlib import Path
 from jobflow import Maker, job
-import os
 from atomate2.dmax.generators.polymer_structure import build_amorphous_structure
+from atomate2.dmax.schemas.task import DmaxStructureTaskDocument
+import os
 
 @dataclass
 class PSPStructureMaker(Maker):
@@ -50,8 +51,8 @@ class PSPStructureMaker(Maker):
     loop: bool = False
     return_builder: bool = False
 
-    @job
-    def make(self) -> object:
+    @job(output_schema=DmaxStructureTaskDocument)
+    def make(self) -> DmaxStructureTaskDocument:
         """
         Build the amorphous structure and return either the wrapper (if return_builder)
         or the path to the packmol pdb file.
@@ -70,8 +71,17 @@ class PSPStructureMaker(Maker):
             num_conf=self.num_conf,
             loop=self.loop,
         )
-        if self.return_builder:
-            return amor
-        # default: return the generated packmol pdb path
-        pdb_path = os.path.join(outdir, "packmol", "packmol.pdb")
-        return pdb_path
+        # read packmol and polymer pdb contents
+        packmol_pdb = os.path.join(outdir, "packmol", "packmol.pdb")
+        mol_dir = os.path.join(outdir, "molecules")
+        # assume single PDB in molecules
+        mol_files = [f for f in os.listdir(mol_dir) if f.endswith('.pdb')]
+        mol_pdb = os.path.join(mol_dir, mol_files[0]) if mol_files else None
+        packmol_txt = open(packmol_pdb).read() if os.path.exists(packmol_pdb) else None
+        mol_txt = open(mol_pdb).read() if mol_pdb and os.path.exists(mol_pdb) else None
+        # return Pydantic document for DB storage, include builder wrapper dict
+        return DmaxStructureTaskDocument(
+            packmol_pdb=packmol_txt,
+            polymer_pdb=mol_txt,
+            builder_wrapper=amor.as_dict()
+        )

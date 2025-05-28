@@ -10,6 +10,7 @@ import importlib
 
 from atomate2.dmax.generators.forcefield import parametrize_auto, parametrize_foyer
 from atomate2.dmax.generators.polymer_structure import PSPBuilderWrapper
+from atomate2.dmax.schemas.task import DmaxForceFieldTaskDocument, DmaxStructureTaskDocument
 
 @dataclass
 class ForceFieldMaker(Maker):
@@ -29,28 +30,44 @@ class ForceFieldMaker(Maker):
     method: str = field(default="auto")
     out_dir: str | None = None
 
-    @job(output_schema=None)
-    def make(self, amor) -> str:
+    @job(output_schema=DmaxForceFieldTaskDocument)
+    def make(self, amor) -> DmaxForceFieldTaskDocument:
+        # handle structure document inputs
+        if isinstance(amor, DmaxStructureTaskDocument):
+            # use builder_wrapper if available to reuse PSPBuilder without rebuild
+            if amor.builder_wrapper:
+                amor = PSPBuilderWrapper.from_dict(amor.builder_wrapper)
+            else:
+                # fallback: write PDB text to file for foyer
+                pdb_txt = amor.polymer_pdb or amor.packmol_pdb
+                if not pdb_txt:
+                    raise ValueError("Structure document missing PDB content")
+                pdb_path = os.path.join(os.getcwd(), "structure.pdb")
+                with open(pdb_path, 'w') as f:
+                    f.write(pdb_txt)
+                amor = pdb_path
         """
         Generate LAMMPS data file from PSP builder `amor` or its wrapper.
         By default uses automatic selection.
         """
-        # stand-alone .pdb input: delegate to parametrize_foyer
+        # determine the data file path via appropriate generator
         if isinstance(amor, str) and amor.lower().endswith('.pdb'):
-            return parametrize_foyer(amor)
-        # other inputs: expect builder wrapper or its serialized dict
-        if not (isinstance(amor, dict) or hasattr(amor, 'get_builder')):
-            raise ValueError('Support inputs: PSPBuilderWrapper (or its dict) or path to .pdb')
-        # reconstruct wrapper if needed
-        if isinstance(amor, dict):
-            amor = PSPBuilderWrapper.from_dict(amor)
-        # ensure parametrization uses the original builder output directory
-        orig_dir = amor.out_dir
-        amor.out_dir = orig_dir
-        # run automatic parametrization where the build files live
-        data_path = parametrize_auto(amor)
-        # move the generated data file into the job's own working directory
-        cwd = os.getcwd()
-        dest = os.path.join(cwd, os.path.basename(data_path))
-        shutil.move(data_path, dest)
-        return dest
+            data_path = parametrize_foyer(amor)
+        else:
+            if isinstance(amor, dict):
+                amor = PSPBuilderWrapper.from_dict(amor)
+            if not hasattr(amor, 'get_builder'):
+                raise ValueError('Input must be a PSPBuilderWrapper or .pdb path')
+            # full auto parametrization
+            orig_dir = amor.out_dir
+            amor.out_dir = orig_dir
+            data_path = parametrize_auto(amor)
+            # move into job cwd
+            dest = os.path.join(os.getcwd(), os.path.basename(data_path))
+            shutil.move(data_path, dest)
+            data_path = dest
+        # read file contents
+        with open(data_path, 'r') as f:
+            data_txt = f.read()
+        # return Pydantic document for DB storage
+        return DmaxForceFieldTaskDocument(lammps_data=data_txt)

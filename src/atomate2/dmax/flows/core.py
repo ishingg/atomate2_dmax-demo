@@ -19,6 +19,7 @@ from atomate2.dmax.schemas.task import DmaxDataGenerationFlowDocument
 
 @dataclass
 class BaseDataGenerationFlow(Maker):
+    #these vars are all place holders, to be replaced by info from frontend 
     name: str = "DMA workflow"
     smiles: str = "[*]CC[*]"
     left_cap: str = "C"

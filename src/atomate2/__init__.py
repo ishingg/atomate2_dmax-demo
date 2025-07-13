@@ -2,5 +2,10 @@
 
 from atomate2._version import __version__
 from atomate2.settings import Atomate2Settings
+from flask import Flask, request
+from flask_restful import Api
 
+
+app = Flask(__name__)
+api = Api(app)
 SETTINGS = Atomate2Settings()

@@ -75,3 +75,14 @@ docs/reference/atomate2.*
 
 .ipynb_checkpoints
 .aider*
+
+# local
+.venv
+.env
+__pycache__
+static/
+.vscode
+
+# nersc
+.superfacility/
+**/fireworks

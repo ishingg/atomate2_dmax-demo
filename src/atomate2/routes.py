@@ -1,0 +1,137 @@
+from flask import Flask, request
+from flask_restful import Resource
+from pathlib import Path
+from atomate2.dmax.flows.core import BaseDataGenerationFlow
+from dmax.models.workflowmodel import create_workflow_entry  # Import model function
+from utils.sfapi import upload_file, create_directory_on_login_node, get_status, cat_file, get_task, get_all_lpad_wflows, remove_file, recursively_rm_dir, run_worker_step, get_lpad_wf
+from bson.objectid import ObjectId
+import os
+import subprocess
+import asyncio
+import numpy as np
+import json
+from dotenv import load_dotenv
+import time
+from __init__ import api
+import os 
+#for my own enrichment
+#the routes file essentially is the place to put all API endpoints that come 
+#from the front end 
+#each class represents an endpoint
+#mongodb still needs to be established for DMAx
+
+
+class DataGenerationSubmission(Resource):
+    def post(self):
+        #initialize variables to upload fields to perlmutter and MongoDB
+        structure_file_path = None
+        json_file_path = None
+        
+        try:    
+            # Extract form data (or use request.get_json() for JSON)
+            form_fields = [
+                "name", "smiles", "left_cap", "right_cap", "length", "num_molecules",
+                "density", "box_type", "out_dir", "num_conf", "loop"
+            ]
+            
+            #uploading workflow to mongoDB 
+            # Create workflow entry
+            workflow_entry = create_workflow_entry(form_fields)
+            #change to the db name when db is created 
+            workflow_id = workflow_entry.get("name")
+            #workflow_id = workflows_collection.insert_one(workflow_entry).inserted_id
+
+            # Ensure a file is uploaded
+            if 'structure_file' not in request.files or request.files['structure_file'].filename == '':
+                return {'error': 'A structure file is required for this workflow submission.'}, 400
+            structure_file = request.files.get('structure_file')
+
+            # Create 'static' directory if it doesn't exist
+            if not os.path.exists('static'):
+                os.makedirs('static')
+                    
+            original_filename = structure_file.filename
+            prefix = os.path.splitext(original_filename)[0]
+            extension = os.path.splitext(original_filename)[1]
+
+            # Use workflow_id as name of directory to put file in
+            workflow_dir_name = str(workflow_id)
+            
+            
+            #upload workflow Perlmutter 
+            
+
+            # Create a directory in Perlmutter
+            root_dir = os.getenv("ROOT_DIR")
+            if not root_dir:
+                raise EnvironmentError("ROOT_DIR environment variable not set.")
+                
+            new_directory = create_directory_on_login_node("perlmutter", root_dir + "/workflows", workflow_dir_name)            
+            if not new_directory:
+                return {'error': "Failed to create directory on Perlmutter."}, 500
+
+            # Construct the new structure file name
+            new_filename = f"{prefix}_{workflow_id}{extension}"
+            structure_file_path = os.path.join('static', new_filename)
+            structure_file.save(structure_file_path) # Save the structure file locally
+
+            # Create JSON file containing workflow specifications
+            json_filename = f"wf_specifications_{prefix}_{workflow_id}.json"
+            json_file_path = os.path.join('static', json_filename)
+
+
+            # Base specification
+            wf_specification = {
+                "name": request.form.get("name"),
+                "smiles": request.form.get("smiles"),
+                "left_cap": request.form.get("left_cap"),
+                "right_cap": request.form.get("right_cap"),
+                "length": request.form.get("length"),
+                "num_molecules": request.form.get("num_molecules"),
+                "density": request.form.get("density"),
+                "box_type": request.form.get("box_type"),
+                "out_dir": request.form.get("out_dir"),
+                "num_conf": request.form.get("num_conf"),
+                "loop": request.form.get("loop"),
+                "structure_filename": new_filename  # Store reference to the structure file
+            }
+            
+            # Write JSON data to file
+            with open(json_file_path, 'w') as json_file:
+                json.dump(wf_specification, json_file, indent=4)
+
+            # Upload files to Perlmutter
+            try:
+                asyncio.run(upload_file(structure_file_path, new_directory)) # Upload structure file
+                asyncio.run(upload_file(json_file_path, new_directory)) # Upload workflow specification file
+            except Exception as e:
+                return {'error': f"Failed to upload files to Perlmutter: {str(e)}"}, 500
+                
+            
+            
+            received = {field: request.form.get(field) for field in form_fields}
+            # Placeholder response
+            return {    
+                "status": "success",
+                "message": "Stub: received web-form submission.",
+                "received_data": received
+            }, 200
+            
+        except Exception as e:
+            return {"error": str(e)}, 400  # HTTP 400 Bad Request
+        
+        finally:
+            # Remove local files if they exist
+            if structure_file_path and os.path.exists(structure_file_path):
+                os.remove(structure_file_path)
+            if json_file_path and os.path.exists(json_file_path):
+                os.remove(json_file_path)
+            
+            # Start a fetcher for this workflow
+            # run_fetcher(workflow_id)
+        
+        
+        
+
+api.add_resource(DataGenerationSubmission, "/submit-data-generation")
+

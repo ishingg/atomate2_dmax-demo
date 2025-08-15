@@ -21,33 +21,35 @@ from dmax.schemas.task import DmaxDataGenerationFlowDocument
 class BaseDataGenerationFlow(Maker):
     #these vars are all place holders, to be replaced by info from frontend 
     name: str = "DMAcon workflow"
-    smiles: str = "[*]CC[*]"
-    left_cap: str = "C"
-    right_cap: str = "C"
-    length: int = 10
-    num_molecules: int = 5
-    density: float = 0.8
-    box_type: str = "c"
     out_dir: Path | None = None
-    num_conf: int = 1
-    loop: bool = False
-
-    def make(self) -> Flow:
+    
+    def make(
+        self,
+        smiles: str = "[*]CC[*]",
+        left_cap: str = "C",
+        right_cap: str = "C",
+        length: int = 10,
+        num_molecules: int = 5,
+        density: float = 0.8,
+        box_type: str = "c",
+        num_conf: int = 1,
+        loop: bool = False
+    ) -> Flow:
         # determine working directory
         wd = str(self.out_dir) if self.out_dir else None
         # structure generation
         struct_job = PSPStructureMaker(
-            smiles=self.smiles,
-            left_cap=self.left_cap,
-            right_cap=self.right_cap,
-            length=self.length,
-            num_molecules=self.num_molecules,
+            smiles=smiles,
+            left_cap=left_cap,
+            right_cap=right_cap,
+            length=length,
+            num_molecules=num_molecules,
             # default the density value 
-            density=self.density,
-            box_type=self.box_type,
+            density=density,
+            box_type=box_type,
             out_dir=wd,
-            num_conf=self.num_conf,
-            loop=self.loop,
+            num_conf=num_conf,
+            loop=loop,
             return_builder=True,
         ).make()
         # forcefield

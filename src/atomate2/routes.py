@@ -26,33 +26,26 @@ class demoTest(Resource):
         data = request.get_json()
 
         # Example processing
-        name = data.get("name")
-        smiles = data.get("smiles")
-        left_cap = data.get("left_cap")
-        right_cap = data.get("right_cap")
-        length = data.get("length")
-        num_molecules = data.get("num_molecules")
-        density = data.get("density")
-        box_type = data.get("box_type")
-        out_dir = data.get("out_dir")
-        num_conf = data.get("num_conf")
-        loop = data.get("loop")
         
-
+        
+        BaseDataGenerationMaker = BaseDataGenerationFlow()
+        
+        DataGenerationFlow = BaseDataGenerationMaker.make(
+            smiles = data.get("smiles"),
+            left_cap = data.get("left_cap"),
+            right_cap = data.get("right_cap"),
+            length = data.get("length"),
+            num_molecules = data.get("num_molecules"),
+            density = data.get("density"),
+            box_type = data.get("box_type"),
+            num_conf = data.get("num_conf"),
+            loop = data.get("loop")
+        )
+        
         response = {
             "status": "success",
             "received": {
-                "name": name,
-                "smiles": smiles,
-                "left_cap": left_cap,
-                "right_cap": right_cap,
-                "length": length,
-                "num_molecules": num_molecules,
-                "density": density,
-                "box_type": box_type,
-                "out_dir": out_dir,
-                "num_conf": num_conf,
-                "loop": loop
+                
             }
         }
         return response, 200

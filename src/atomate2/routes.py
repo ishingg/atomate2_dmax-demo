@@ -1,9 +1,9 @@
 from flask import Flask, request
 from flask_restful import Resource
 from pathlib import Path
-from atomate2.dmax.flows.core import BaseDataGenerationFlow
+from dmax.flows.core import BaseDataGenerationFlow
 from dmax.models.workflowmodel import create_workflow_entry  # Import model function
-from utils.sfapi import upload_file, create_directory_on_login_node, get_status, cat_file, get_task, get_all_lpad_wflows, remove_file, recursively_rm_dir, run_worker_step, get_lpad_wf
+#from utils.sfapi import upload_file, create_directory_on_login_node, get_status, cat_file, get_task, get_all_lpad_wflows, remove_file, recursively_rm_dir, run_worker_step, get_lpad_wf
 from bson.objectid import ObjectId
 import os
 import subprocess
@@ -20,7 +20,43 @@ import os
 #each class represents an endpoint
 #mongodb still needs to be established for DMAx
 
+class demoTest(Resource):
+    def post(self):
+        # Get JSON data from frontend or Postman
+        data = request.get_json()
 
+        # Example processing
+        name = data.get("name")
+        smiles = data.get("smiles")
+        left_cap = data.get("left_cap")
+        right_cap = data.get("right_cap")
+        length = data.get("length")
+        num_molecules = data.get("num_molecules")
+        density = data.get("density")
+        box_type = data.get("box_type")
+        out_dir = data.get("out_dir")
+        num_conf = data.get("num_conf")
+        loop = data.get("loop")
+        
+
+        response = {
+            "status": "success",
+            "received": {
+                "name": name,
+                "smiles": smiles,
+                "left_cap": left_cap,
+                "right_cap": right_cap,
+                "length": length,
+                "num_molecules": num_molecules,
+                "density": density,
+                "box_type": box_type,
+                "out_dir": out_dir,
+                "num_conf": num_conf,
+                "loop": loop
+            }
+        }
+        return response, 200
+    
 class DataGenerationSubmission(Resource):
     def post(self):
         #initialize variables to upload fields to perlmutter and MongoDB
@@ -134,4 +170,4 @@ class DataGenerationSubmission(Resource):
         
 
 api.add_resource(DataGenerationSubmission, "/submit-data-generation")
-
+api.add_resource(demoTest, "/process")

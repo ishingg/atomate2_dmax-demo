@@ -4,8 +4,8 @@ Job maker for polymer structure generation using PSP AmorphousBuilder.
 from dataclasses import dataclass, field
 from pathlib import Path
 from jobflow import Maker, job
-from atomate2.dmax.generators.polymer_structure import build_amorphous_structure
-from atomate2.dmax.schemas.task import DmaxStructureTaskDocument
+from dmax.generators.polymer_structure import build_amorphous_structure
+from dmax.schemas.task import DmaxStructureTaskDocument
 import os
 
 @dataclass

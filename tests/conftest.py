@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+
 from fireworks import LaunchPad
 from jobflow import JobStore
 from jobflow.settings import JobflowSettings

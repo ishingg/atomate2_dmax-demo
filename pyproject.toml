@@ -143,6 +143,10 @@ repository = "https://github.com/materialsproject/atomate2"
 documentation = "https://materialsproject.github.io/atomate2/"
 changelog = "https://github.com/materialsproject/atomate2/blob/main/CHANGELOG.md"
 
+[tool.setuptools]
+packages = ["atomate2"]
+package-dir = {"" = "src"}
+
 [tool.setuptools.package-data]
 atomate2 = ["py.typed"]
 "atomate2.vasp.sets" = ["*.yaml"]
@@ -163,6 +167,7 @@ ignore_missing_imports = true
 no_strict_optional = true
 
 [tool.pytest.ini_options]
+pythonpath = ["src"]
 addopts = "-p no:warnings --import-mode=importlib --cov-config=pyproject.toml"
 filterwarnings = [
     "ignore:.*POTCAR.*:UserWarning",

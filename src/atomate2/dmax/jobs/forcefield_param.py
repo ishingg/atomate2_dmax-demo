@@ -8,9 +8,9 @@ import os
 import shutil
 import importlib
 
-from atomate2.dmax.generators.forcefield import parametrize_auto, parametrize_foyer
-from atomate2.dmax.generators.polymer_structure import PSPBuilderWrapper
-from atomate2.dmax.schemas.task import DmaxForceFieldTaskDocument, DmaxStructureTaskDocument
+from dmax.generators.forcefield import parametrize_auto, parametrize_foyer
+from dmax.generators.polymer_structure import PSPBuilderWrapper
+from dmax.schemas.task import DmaxForceFieldTaskDocument, DmaxStructureTaskDocument
 
 @dataclass
 class ForceFieldMaker(Maker):

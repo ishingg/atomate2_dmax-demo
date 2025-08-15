@@ -12,7 +12,7 @@ import scipy as sp
 import time
 import ast
 import math
-from ase.io import read, write
+
 import string
 import time
 import os

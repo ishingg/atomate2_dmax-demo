@@ -12,15 +12,15 @@ import os
 
 from jobflow import Flow, Maker  # ensure Flow is imported
 
-from atomate2.dmax.jobs.structure_generation import PSPStructureMaker
-from atomate2.dmax.jobs.forcefield_param import ForceFieldMaker
-from atomate2.dmax.schemas.task import DmaxDataGenerationFlowDocument
+from dmax.jobs.structure_generation import PSPStructureMaker
+from dmax.jobs.forcefield_param import ForceFieldMaker
+from dmax.schemas.task import DmaxDataGenerationFlowDocument
 
 
 @dataclass
 class BaseDataGenerationFlow(Maker):
     #these vars are all place holders, to be replaced by info from frontend 
-    name: str = "DMA workflow"
+    name: str = "DMAcon workflow"
     smiles: str = "[*]CC[*]"
     left_cap: str = "C"
     right_cap: str = "C"
@@ -42,6 +42,7 @@ class BaseDataGenerationFlow(Maker):
             right_cap=self.right_cap,
             length=self.length,
             num_molecules=self.num_molecules,
+            # default the density value 
             density=self.density,
             box_type=self.box_type,
             out_dir=wd,

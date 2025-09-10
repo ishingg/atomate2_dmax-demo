@@ -14,7 +14,7 @@ export default function Home() {
   useEffect(() => {
     const fetchLanding = async () => {
       const response = await fetch(
-        process.env.NEXT_PUBLIC_BASE_URL + "/api/landing"
+        process.env.NEXT_PUBLIC_BASE_URL + "/atomate2-api/landing"
       );
       const data = await response.json();
 

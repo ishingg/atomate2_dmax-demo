@@ -16,7 +16,7 @@ const FileForm = () => {
   // Use axios to handle multiple objects including files
   function handleSubmit(event) {
     event.preventDefault();
-    const url = process.env.NEXT_PUBLIC_BASE_URL + "/api/file-input";
+    const url = process.env.NEXT_PUBLIC_BASE_URL + "/atomate2-api/file-input";
     const formData = new FormData();
     formData.append("structureFile", structureFile);
     formData.append("primaryPurpose", primaryPurpose);

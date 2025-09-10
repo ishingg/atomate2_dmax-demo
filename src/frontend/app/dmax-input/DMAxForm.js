@@ -53,7 +53,7 @@ const DMAxForm = () => {
 
 
         // create form data
-        const url = process.env.NEXT_PUBLIC_BASE_URL + '/api/dmax-input'; 
+        const url = process.env.NEXT_PUBLIC_BASE_URL + '/atomate2-api/process/'; 
         const formData = new FormData();
         formData.append("smilesString", smileStringInput);
         formData.append("name", name);
@@ -75,6 +75,7 @@ const DMAxForm = () => {
         };
         
         // Send request to API and handle response
+        axios.get(url)
         axios.post(url, formData, config)
             .then((response) => {
 
@@ -280,5 +281,7 @@ const DMAxForm = () => {
         </form>
     );
 }
+
+
 
 export default DMAxForm;

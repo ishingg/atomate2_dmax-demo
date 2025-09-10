@@ -22,7 +22,7 @@ const WorkflowForm = () => {
   // Use axios to handle multiple objects including files
   function handleSubmit(event) {
     event.preventDefault();
-    const url = process.env.NEXT_PUBLIC_BASE_URL + "/api/v1/workflow/submit";
+    const url = process.env.NEXT_PUBLIC_BASE_URL + "/atomate2-api/v1/workflow/submit";
     const formData = new FormData();
     formData.append("purpose", primaryPurpose);
     formData.append("use_active_learning", useActiveLearning);

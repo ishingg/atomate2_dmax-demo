@@ -59,6 +59,7 @@ class demoTest(Resource):
         print("Sending Response:", json.dumps(response))
         return response, 200
     
+
 class DataGenerationSubmission(Resource):
     def post(self):
         #initialize variables to upload fields to perlmutter and MongoDB
@@ -76,7 +77,7 @@ class DataGenerationSubmission(Resource):
             # Create workflow entry
             workflow_entry = create_workflow_entry(form_fields)
             #change to the db name when db is created 
-            workflow_id = workflow_entry.get("name")
+                #workflow_id = workflow_entry.get("name")
             #workflow_id = workflows_collection.insert_one(workflow_entry).inserted_id
 
             # Ensure a file is uploaded
@@ -286,6 +287,21 @@ class DMAxInput(Resource):
             'smilesString': smiles 
         }      
         
+class Test_SFAPI_Connection(Resource):
 
+    # Get NERSC status: for testing connection to NERSC purposes
+    def get(self):
+        status_data = asyncio.run(get_status())
+        return status_data
+
+    # Cat a file in NERSC: for testing Run Command ability purposes
+    def post(self):
+        root_dir = os.getenv("ROOT_DIR") + "/sf_api_implementing"
+        file_name = "run_command_file.txt"
+        cat_results = cat_file(root_dir, file_name)
+        cat_results["next_step"] = "please run task_id in 'Get Task from ID endpoint' to confirm cat"
+        return { "cat_result": cat_results }
+
+api.add_resource(Test_SFAPI_Connection, '/api/v1/sfapi/connect')
 api.add_resource(DataGenerationSubmission, "/atomate2-api/dmax-input/")
 api.add_resource(demoTest, "/atomate2-api/process/")
